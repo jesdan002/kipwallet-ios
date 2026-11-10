@@ -1,0 +1,93 @@
+name: Probar en iPad (iOS 18) por Tailscale
+
+# Sesion manual: Actions > este flujo > Run workflow.
+# Une el runner a la tailnet de Kip (llave efimera en el secreto
+# TS_AUTHKEY), compila la app, la instala en un simulador de iPad
+# con iOS 18, abre el Simulator con Compartir Pantalla (VNC) activo
+# e imprime en el log la IP Tailscale del runner para conectar.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ipad:
+    runs-on: macos-14
+    timeout-minutes: 300
+    steps:
+      - name: Bajar el codigo
+        uses: actions/checkout@v4
+
+      - name: Unir el runner a la tailnet
+        uses: tailscale/github-action@v3
+        with:
+          authkey: ${{ secrets.TS_AUTHKEY }}
+          tags: tag:ci
+
+      - name: Elegir el Xcode mas nuevo disponible
+        run: |
+          ls /Applications | grep -i xcode || true
+          sudo xcode-select -s /Applications/Xcode_16.2.app || \
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_16*.app | sort -V | tail -1)" || true
+          xcodebuild -version
+
+      - name: Activar Compartir Pantalla (VNC)
+        run: |
+          # Contrasena VNC de ESTA sesion: se deriva del numero de
+          # corrida (visible para el dueno en la pagina de la corrida)
+          # y la imprime el paso siguiente junto con la IP.
+          PASS="kip$(echo $GITHUB_RUN_NUMBER)pad"
+          sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart \
+            -activate -configure -access -on \
+            -clientopts -setvnclegacy -vnclegacy yes \
+            -clientopts -setvncpw -vncpw "$PASS" \
+            -restart -agent -privs -all || true
+          echo "VNC_PASSWORD=$PASS" >> "$GITHUB_ENV"
+
+      - name: Compilar e instalar en el simulador de iPad
+        run: |
+          set -e
+          PROYECTO="$(ls -d *.xcodeproj | head -1)"
+          ESQUEMA="${PROYECTO%.xcodeproj}"
+          echo "Proyecto: $PROYECTO / esquema: $ESQUEMA"
+          UDID="$(xcrun simctl list devices available | grep -E 'iPad' | grep -oE '[0-9A-F-]{36}' | head -1)"
+          if [ -z "$UDID" ]; then
+            RUNTIME="$(xcrun simctl list runtimes | grep -oE 'com.apple.CoreSimulator.SimRuntime.iOS-18[^ ]*' | head -1)"
+            UDID="$(xcrun simctl create 'iPad-Prueba' 'com.apple.CoreSimulator.SimDeviceType.iPad-A16' "$RUNTIME")"
+          fi
+          echo "UDID simulador: $UDID"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b || true
+          xcodebuild -project "$PROYECTO" -scheme "$ESQUEMA" \
+            -destination "platform=iOS Simulator,id=$UDID" \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+          APP="$(find build/Build/Products -name '*.app' -maxdepth 3 | head -1)"
+          echo "App compilada: $APP"
+          xcrun simctl install "$UDID" "$APP"
+          PAQUETE="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist")"
+          xcrun simctl launch "$UDID" "$PAQUETE"
+          sleep 12
+          mkdir -p capturas
+          xcrun simctl io "$UDID" screenshot capturas/01-apertura.png || true
+          open -a Simulator
+
+      - name: Anunciar la sesion
+        run: |
+          IP="$(tailscale ip -4 | head -1)"
+          echo "::notice::Sesion lista. VNC: $IP (puerto 5900), contrasena: $VNC_PASSWORD"
+          echo "=================================================="
+          echo "  IP TAILSCALE DEL RUNNER: $IP"
+          echo "  VNC puerto 5900 - contrasena: $VNC_PASSWORD"
+          echo "=================================================="
+
+      - name: Esperar a que termine la prueba (hasta 4 horas)
+        run: |
+          echo "Sesion viva. Este paso mantiene la maquina encendida."
+          sleep 14400 || true
+
+      - name: Guardar capturas finales
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas
+          path: capturas/
+          if-no-files-found: ignore
