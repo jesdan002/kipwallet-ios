@@ -11,7 +11,7 @@ on:
 
 jobs:
   ipad:
-    runs-on: macos-14
+    runs-on: [macos-14, in, us]
     timeout-minutes: 300
     steps:
       - name: Bajar el codigo
