@@ -155,6 +155,54 @@ enum Api {
         return try await getTexto("api/v1/gastos/categoria/\(claveRuta)/exportar" + sufijoQuery(query), respaldo: "No se pudo exportar.")
     }
 
+    // MARK: - Presupuesto (pantalla) y Pronostico
+
+    /// La pantalla Presupuesto del mes pedido; sin mes, el mes actual
+    /// del servidor. Toda escritura devuelve la pantalla entera
+    /// recalculada y el modelo la sustituye (no hay DTO de mensaje).
+    static func presupuesto(mes: String?) async throws -> PresupuestoPantalla {
+        var query: [(String, String)] = []
+        if let mes = mes { query.append(("mes", mes)) }
+        return try await get("api/v1/presupuesto" + sufijoQuery(query), respaldo: "No se pudo cargar tu presupuesto.")
+    }
+
+    /// Fija el tope de una categoria. Claves en espanol (categoria, mes,
+    /// limite): el contrato web (category/month/limit_amount) da 422.
+    /// El tope es unico por categoria para todos los meses; `mes` solo
+    /// elige el mes del payload que se devuelve.
+    static func guardarPresupuesto(categoria: String, mes: String, limite: Double) async throws -> PresupuestoPantalla {
+        try await post("api/v1/presupuesto", cuerpo: [
+            "categoria": categoria, "mes": mes, "limite": limite,
+        ], respaldo: "No se pudo guardar el presupuesto. Intenta de nuevo.")
+    }
+
+    static func guardarPlanPresupuesto(mes: String, ingreso: Double) async throws -> PresupuestoPantalla {
+        try await post("api/v1/presupuesto/plan", cuerpo: [
+            "mes": mes, "ingreso_esperado": ingreso,
+        ], respaldo: "No se pudo guardar el ingreso esperado. Intenta de nuevo.")
+    }
+
+    static func reiniciarPresupuesto(mes: String) async throws -> PresupuestoPantalla {
+        try await post("api/v1/presupuesto/reiniciar", cuerpo: [
+            "mes": mes,
+        ], respaldo: "No se pudo empezar de nuevo. Intenta de nuevo.")
+    }
+
+    /// Quita el tope de una categoria: el path lleva el id del Budget
+    /// (fila.id), NO la clave de la categoria. Ojo: la respuesta puede
+    /// traer el payload de otro mes (el del budget borrado, §1.9 del mapa).
+    static func quitarPresupuesto(id: Int) async throws -> PresupuestoPantalla {
+        try await metodo("DELETE", "api/v1/presupuesto/\(id)", cuerpo: nil, respaldo: "No se pudo quitar el presupuesto. Intenta de nuevo.")
+    }
+
+    /// El Pronostico: `plan` se manda como entero 1/0, igual que Retrofit
+    /// en la Android, y `meses` solo vale 3 o 6 (otro valor el servidor
+    /// lo convierte a 3).
+    static func pronostico(meses: Int, plan: Bool) async throws -> Pronostico {
+        try await get("api/v1/pronostico" + sufijoQuery([("meses", String(meses)), ("plan", plan ? "1" : "0")]),
+                      respaldo: "No se pudo cargar tu pronóstico. Intenta de nuevo.")
+    }
+
     // MARK: - Deudas
 
     static func deudas() async throws -> DeudasRespuesta {
@@ -352,6 +400,55 @@ enum Api {
 
     static func leerTodasNotificaciones() async throws -> MensajeOk {
         try await post("api/v1/notificaciones/leer-todas", cuerpo: [:], respaldo: "No se pudieron marcar como leídas.")
+    }
+
+    // MARK: - Patrimonio
+
+    static func patrimonio(rango: String) async throws -> PatrimonioDto {
+        try await get("api/v1/patrimonio" + sufijoQuery([("rango", rango)]), respaldo: "No se pudo cargar tu patrimonio. Intenta de nuevo.")
+    }
+
+    /// Las mutaciones de Patrimonio devuelven la foto completa con el
+    /// rango forzado a 3M: el modelo adopta la respuesta tal cual.
+    static func agregarBien(cuerpo: [String: Any]) async throws -> PatrimonioDto {
+        try await post("api/v1/patrimonio/bienes", cuerpo: cuerpo, respaldo: "No se pudo agregar. Intenta de nuevo.")
+    }
+
+    static func editarBien(id: Int, cuerpo: [String: Any]) async throws -> PatrimonioDto {
+        try await metodo("PUT", "api/v1/patrimonio/bienes/\(id)", cuerpo: cuerpo, respaldo: "No se pudo guardar. Intenta de nuevo.")
+    }
+
+    static func borrarBien(id: Int) async throws -> PatrimonioDto {
+        try await metodo("DELETE", "api/v1/patrimonio/bienes/\(id)", cuerpo: nil, respaldo: "No se pudo eliminar. Intenta de nuevo.")
+    }
+
+    // MARK: - Metas
+
+    static func metas() async throws -> MetasDto {
+        try await get("api/v1/metas", respaldo: "No se pudieron cargar tus metas. Intenta de nuevo.")
+    }
+
+    /// La respuesta de las mutaciones de Metas se descarta: el modelo
+    /// recarga el GET completo, como en la Android.
+    static func crearMeta(cuerpo: [String: Any]) async throws -> MetaRespuestaDto {
+        try await post("api/v1/metas", cuerpo: cuerpo, respaldo: "No se pudo crear la meta. Intenta de nuevo.")
+    }
+
+    static func editarMeta(id: Int, cuerpo: [String: Any]) async throws -> MetaRespuestaDto {
+        try await metodo("PUT", "api/v1/metas/\(id)", cuerpo: cuerpo, respaldo: "No se pudieron guardar los cambios. Intenta de nuevo.")
+    }
+
+    static func eliminarMeta(id: Int) async throws -> MensajeOk {
+        try await metodo("DELETE", "api/v1/metas/\(id)", cuerpo: nil, respaldo: "No se pudo eliminar la meta. Intenta de nuevo.")
+    }
+
+    /// Archivar es un toggle del servidor: va sin cuerpo.
+    static func archivarMeta(id: Int) async throws -> MetaRespuestaDto {
+        try await metodo("POST", "api/v1/metas/\(id)/archivar", cuerpo: nil, respaldo: "No se pudo archivar la meta. Intenta de nuevo.")
+    }
+
+    static func aportarMeta(id: Int, cuerpo: [String: Any]) async throws -> MetaRespuestaDto {
+        try await post("api/v1/metas/\(id)/movimientos", cuerpo: cuerpo, respaldo: "No se pudo registrar el movimiento. Intenta de nuevo.")
     }
 
     // MARK: - Transporte generico

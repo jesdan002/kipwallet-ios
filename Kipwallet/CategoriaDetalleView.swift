@@ -3,7 +3,7 @@ import SwiftUI
 // El detalle de una categoria de Gastos (CategoriaDetalleScreen.kt):
 // barras de 6 meses, anillo de presupuesto, movimientos del mes con
 // filtros y el total al pie. "Editar presupuesto" navega a la pantalla
-// Presupuesto (que vive en Mas; en esta ronda se avisa con honestidad).
+// Presupuesto con la clave a editar (la pila vive en AppPrincipalView).
 
 @MainActor
 final class CategoriaDetalleModelo: ObservableObject {
@@ -73,12 +73,16 @@ struct CategoriaDetalleView: View {
     @Environment(\.dismiss) private var cerrar
     @StateObject private var modelo: CategoriaDetalleModelo
     var alAbrirFicha: (Int) -> Void = { _ in }
+    /// Navega a Presupuesto con la clave a editar: la pantalla destino
+    /// abre directa la hoja de edicion del tope de esta categoria.
+    var alEditarPresupuesto: (String) -> Void = { _ in }
     @State private var hojaFiltros = false
-    @State private var avisoPresupuesto = false
 
-    init(clave: String, alAbrirFicha: @escaping (Int) -> Void = { _ in }) {
+    init(clave: String, alAbrirFicha: @escaping (Int) -> Void = { _ in },
+         alEditarPresupuesto: @escaping (String) -> Void = { _ in }) {
         _modelo = StateObject(wrappedValue: CategoriaDetalleModelo(clave: clave))
         self.alAbrirFicha = alAbrirFicha
+        self.alEditarPresupuesto = alEditarPresupuesto
     }
 
     var body: some View {
@@ -185,11 +189,6 @@ struct CategoriaDetalleView: View {
         .sheet(isPresented: $hojaFiltros) {
             FiltrosCategoriaDetalleView(modelo: modelo)
         }
-        .alert("Presupuesto", isPresented: $avisoPresupuesto) {
-            Button("Entendido", role: .cancel) {}
-        } message: {
-            Text("El presupuesto se edita en la pantalla Presupuesto, que se construye en la siguiente ronda.")
-        }
     }
 
     private var tituloCabecera: String {
@@ -271,7 +270,7 @@ struct CategoriaDetalleView: View {
                         Text(pasado ? dinero(abs(presupuesto.diferencia ?? 0)) : (presupuesto.diferenciaTexto ?? ""))
                             .font(.manrope(24, weight: .heavy))
                             .foregroundStyle(pasado ? Color.red : KipColor.text(scheme))
-                        Button("Editar presupuesto") { avisoPresupuesto = true }
+                        Button("Editar presupuesto") { alEditarPresupuesto(modelo.clave) }
                             .font(.manrope(15, weight: .bold))
                             .foregroundStyle(KipColor.gradientEnd)
                     }
@@ -288,7 +287,7 @@ struct CategoriaDetalleView: View {
                 Text("No tienes presupuesto para esta categoría.")
                     .font(.manrope(14))
                     .foregroundStyle(KipColor.textSecondary(scheme))
-                Button("Poner presupuesto") { avisoPresupuesto = true }
+                Button("Poner presupuesto") { alEditarPresupuesto(modelo.clave) }
                     .font(.manrope(15, weight: .bold))
                     .foregroundStyle(KipColor.gradientEnd)
             }

@@ -2203,3 +2203,1111 @@ enum ValorFlexible: Codable {
         }
     }
 }
+
+// MARK: - Presupuesto (pantalla) y Pronostico
+
+// Los DTOs de la pantalla Presupuesto (GET api/v1/presupuesto): forma
+// DISTINTA a PresupuestoMes/PresupuestoFila del Panel y de Gastos, que
+// son otro contrato. Sin envoltura: el objeto raiz ES la pantalla y
+// casi todo importe llega dos veces (numero + texto del servidor).
+
+struct PresupuestoResumen: Codable {
+    let totalLimites: Double
+    let totalLimitesTexto: String
+    let totalGastado: Double
+    let totalGastadoTexto: String
+    let teQueda: Double
+    let teQuedaTexto: String
+    let porcentaje: Double?
+    let diasRestantes: Int
+    let porDia: Double?
+    let porDiaTexto: String?
+
+    enum CodingKeys: String, CodingKey {
+        case totalLimites = "total_limites"
+        case totalLimitesTexto = "total_limites_texto"
+        case totalGastado = "total_gastado"
+        case totalGastadoTexto = "total_gastado_texto"
+        case teQueda = "te_queda"
+        case teQuedaTexto = "te_queda_texto"
+        case porcentaje
+        case diasRestantes = "dias_restantes"
+        case porDia = "por_dia"
+        case porDiaTexto = "por_dia_texto"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        totalLimites = try c.decodeIfPresent(Double.self, forKey: .totalLimites) ?? 0
+        totalLimitesTexto = try c.decodeIfPresent(String.self, forKey: .totalLimitesTexto) ?? ""
+        totalGastado = try c.decodeIfPresent(Double.self, forKey: .totalGastado) ?? 0
+        totalGastadoTexto = try c.decodeIfPresent(String.self, forKey: .totalGastadoTexto) ?? ""
+        teQueda = try c.decodeIfPresent(Double.self, forKey: .teQueda) ?? 0
+        teQuedaTexto = try c.decodeIfPresent(String.self, forKey: .teQuedaTexto) ?? ""
+        porcentaje = try c.decodeIfPresent(Double.self, forKey: .porcentaje)
+        diasRestantes = try c.decodeIfPresent(Int.self, forKey: .diasRestantes) ?? 0
+        porDia = try c.decodeIfPresent(Double.self, forKey: .porDia)
+        porDiaTexto = try c.decodeIfPresent(String.self, forKey: .porDiaTexto)
+    }
+
+    init(totalLimites: Double = 0, totalLimitesTexto: String = "", totalGastado: Double = 0,
+         totalGastadoTexto: String = "", teQueda: Double = 0, teQuedaTexto: String = "",
+         porcentaje: Double? = nil, diasRestantes: Int = 0, porDia: Double? = nil, porDiaTexto: String? = nil) {
+        self.totalLimites = totalLimites
+        self.totalLimitesTexto = totalLimitesTexto
+        self.totalGastado = totalGastado
+        self.totalGastadoTexto = totalGastadoTexto
+        self.teQueda = teQueda
+        self.teQuedaTexto = teQuedaTexto
+        self.porcentaje = porcentaje
+        self.diasRestantes = diasRestantes
+        self.porDia = porDia
+        self.porDiaTexto = porDiaTexto
+    }
+}
+
+struct PresupuestoServicios: Codable {
+    let esperado: Double
+    let esperadoTexto: String
+    let cobrado: Double
+    let cobradoTexto: String
+    let restante: Double
+    let restanteTexto: String
+
+    enum CodingKeys: String, CodingKey {
+        case esperado, cobrado, restante
+        case esperadoTexto = "esperado_texto"
+        case cobradoTexto = "cobrado_texto"
+        case restanteTexto = "restante_texto"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        esperado = try c.decodeIfPresent(Double.self, forKey: .esperado) ?? 0
+        esperadoTexto = try c.decodeIfPresent(String.self, forKey: .esperadoTexto) ?? ""
+        cobrado = try c.decodeIfPresent(Double.self, forKey: .cobrado) ?? 0
+        cobradoTexto = try c.decodeIfPresent(String.self, forKey: .cobradoTexto) ?? ""
+        restante = try c.decodeIfPresent(Double.self, forKey: .restante) ?? 0
+        restanteTexto = try c.decodeIfPresent(String.self, forKey: .restanteTexto) ?? ""
+    }
+
+    init(esperado: Double = 0, esperadoTexto: String = "", cobrado: Double = 0,
+         cobradoTexto: String = "", restante: Double = 0, restanteTexto: String = "") {
+        self.esperado = esperado
+        self.esperadoTexto = esperadoTexto
+        self.cobrado = cobrado
+        self.cobradoTexto = cobradoTexto
+        self.restante = restante
+        self.restanteTexto = restanteTexto
+    }
+}
+
+struct PresupuestoIngresos: Codable {
+    let total: Double
+    let totalTexto: String
+
+    enum CodingKeys: String, CodingKey {
+        case total
+        case totalTexto = "total_texto"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        total = try c.decodeIfPresent(Double.self, forKey: .total) ?? 0
+        totalTexto = try c.decodeIfPresent(String.self, forKey: .totalTexto) ?? ""
+    }
+
+    init(total: Double = 0, totalTexto: String = "") {
+        self.total = total
+        self.totalTexto = totalTexto
+    }
+}
+
+/// La meta de ahorro dentro de Presupuesto: sin meta el servidor manda
+/// solo {"hay_meta": false} y todo lo demas llega ausente (opcional).
+struct MetaAhorroPresupuesto: Codable {
+    let hayMeta: Bool
+    let id: Int?
+    let nombre: String?
+    let objetivo: Double?
+    let objetivoTexto: String?
+    let ahorrado: Double?
+    let ahorradoTexto: String?
+    let porcentaje: Double?
+    let proyectado: Double?
+    let proyectadoTexto: String?
+    let mensaje: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, nombre, objetivo, ahorrado, porcentaje, proyectado, mensaje
+        case hayMeta = "hay_meta"
+        case objetivoTexto = "objetivo_texto"
+        case ahorradoTexto = "ahorrado_texto"
+        case proyectadoTexto = "proyectado_texto"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        hayMeta = try c.decodeIfPresent(Bool.self, forKey: .hayMeta) ?? false
+        id = try c.decodeIfPresent(Int.self, forKey: .id)
+        nombre = try c.decodeIfPresent(String.self, forKey: .nombre)
+        objetivo = try c.decodeIfPresent(Double.self, forKey: .objetivo)
+        objetivoTexto = try c.decodeIfPresent(String.self, forKey: .objetivoTexto)
+        ahorrado = try c.decodeIfPresent(Double.self, forKey: .ahorrado)
+        ahorradoTexto = try c.decodeIfPresent(String.self, forKey: .ahorradoTexto)
+        porcentaje = try c.decodeIfPresent(Double.self, forKey: .porcentaje)
+        proyectado = try c.decodeIfPresent(Double.self, forKey: .proyectado)
+        proyectadoTexto = try c.decodeIfPresent(String.self, forKey: .proyectadoTexto)
+        mensaje = try c.decodeIfPresent(String.self, forKey: .mensaje)
+    }
+
+    init(hayMeta: Bool = false, id: Int? = nil, nombre: String? = nil, objetivo: Double? = nil,
+         objetivoTexto: String? = nil, ahorrado: Double? = nil, ahorradoTexto: String? = nil,
+         porcentaje: Double? = nil, proyectado: Double? = nil, proyectadoTexto: String? = nil,
+         mensaje: String? = nil) {
+        self.hayMeta = hayMeta
+        self.id = id
+        self.nombre = nombre
+        self.objetivo = objetivo
+        self.objetivoTexto = objetivoTexto
+        self.ahorrado = ahorrado
+        self.ahorradoTexto = ahorradoTexto
+        self.porcentaje = porcentaje
+        self.proyectado = proyectado
+        self.proyectadoTexto = proyectadoTexto
+        self.mensaje = mensaje
+    }
+}
+
+struct HistorialPresupuesto: Codable {
+    let etiqueta: String
+    let gastado: Double
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        etiqueta = try c.decodeIfPresent(String.self, forKey: .etiqueta) ?? ""
+        gastado = try c.decodeIfPresent(Double.self, forKey: .gastado) ?? 0
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case etiqueta, gastado
+    }
+
+    init(etiqueta: String = "", gastado: Double = 0) {
+        self.etiqueta = etiqueta
+        self.gastado = gastado
+    }
+}
+
+/// Una fila de la pantalla Presupuesto: categoria con tope o solo con
+/// gasto. `id` es el id del Budget (null sin tope) y lo usa el DELETE;
+/// `limite` ya viene EFECTIVO (con rollover aplicado): la fila no trae
+/// el limite base ni el rollover, y la app no los muestra ni los edita.
+struct PresupuestoPantallaFila: Codable, Identifiable {
+    var idFila: String { categoria }
+    let id: Int?
+    let categoria: String
+    let etiqueta: String
+    let categoriaColor: String
+    let categoriaIcono: String
+    let gastado: Double
+    let gastadoTexto: String
+    let mesPasado: Double
+    let mesPasadoTexto: String
+    let limite: Double?
+    let limiteTexto: String?
+    let queda: Double?
+    let quedaTexto: String?
+    let porcentaje: Double?
+    let alerta: String?
+    let historial: [HistorialPresupuesto]
+
+    enum CodingKeys: String, CodingKey {
+        case id, categoria, etiqueta, gastado, limite, queda, porcentaje, alerta, historial
+        case categoriaColor = "categoria_color"
+        case categoriaIcono = "categoria_icono"
+        case gastadoTexto = "gastado_texto"
+        case mesPasado = "mes_pasado"
+        case mesPasadoTexto = "mes_pasado_texto"
+        case limiteTexto = "limite_texto"
+        case quedaTexto = "queda_texto"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(Int.self, forKey: .id)
+        categoria = try c.decodeIfPresent(String.self, forKey: .categoria) ?? ""
+        etiqueta = try c.decodeIfPresent(String.self, forKey: .etiqueta) ?? ""
+        categoriaColor = try c.decodeIfPresent(String.self, forKey: .categoriaColor) ?? ""
+        categoriaIcono = try c.decodeIfPresent(String.self, forKey: .categoriaIcono) ?? "etiqueta"
+        gastado = try c.decodeIfPresent(Double.self, forKey: .gastado) ?? 0
+        gastadoTexto = try c.decodeIfPresent(String.self, forKey: .gastadoTexto) ?? ""
+        mesPasado = try c.decodeIfPresent(Double.self, forKey: .mesPasado) ?? 0
+        mesPasadoTexto = try c.decodeIfPresent(String.self, forKey: .mesPasadoTexto) ?? ""
+        limite = try c.decodeIfPresent(Double.self, forKey: .limite)
+        limiteTexto = try c.decodeIfPresent(String.self, forKey: .limiteTexto)
+        queda = try c.decodeIfPresent(Double.self, forKey: .queda)
+        quedaTexto = try c.decodeIfPresent(String.self, forKey: .quedaTexto)
+        porcentaje = try c.decodeIfPresent(Double.self, forKey: .porcentaje)
+        alerta = try c.decodeIfPresent(String.self, forKey: .alerta)
+        historial = try c.decodeIfPresent([HistorialPresupuesto].self, forKey: .historial) ?? []
+    }
+}
+
+/// El grupo "Todo lo demas": subconjunto de `filas` (las sin tope y con
+/// gasto). No sumarlas otra vez a ningun total.
+struct TodoLoDemas: Codable {
+    let gastado: Double
+    let gastadoTexto: String
+    let cantidad: Int
+    let filas: [PresupuestoPantallaFila]
+
+    enum CodingKeys: String, CodingKey {
+        case gastado, cantidad, filas
+        case gastadoTexto = "gastado_texto"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        gastado = try c.decodeIfPresent(Double.self, forKey: .gastado) ?? 0
+        gastadoTexto = try c.decodeIfPresent(String.self, forKey: .gastadoTexto) ?? ""
+        cantidad = try c.decodeIfPresent(Int.self, forKey: .cantidad) ?? 0
+        filas = try c.decodeIfPresent([PresupuestoPantallaFila].self, forKey: .filas) ?? []
+    }
+
+    init(gastado: Double = 0, gastadoTexto: String = "", cantidad: Int = 0, filas: [PresupuestoPantallaFila] = []) {
+        self.gastado = gastado
+        self.gastadoTexto = gastadoTexto
+        self.cantidad = cantidad
+        self.filas = filas
+    }
+}
+
+/// El plan del mes: el ingreso esperado guardado puede ser null (nunca
+/// fijado) y entonces el efectivo es el ingreso del mes pasado
+/// (ingreso_es_sugerido). Las tarjetas pintan el EFECTIVO; la hoja de
+/// ingreso precarga el GUARDADO.
+struct PlanPresupuesto: Codable {
+    let ingresoEsperado: Double?
+    let ingresoEsperadoTexto: String?
+    let ingresoEsSugerido: Bool
+    let ingresoMesPasado: Double
+    let ingresoMesPasadoTexto: String
+    let ingresoEfectivo: Double
+    let ingresoEfectivoTexto: String
+    let totalAsignado: Double
+    let totalAsignadoTexto: String
+    let pagoDeudas: Double
+    let pagoDeudasTexto: String
+    let pagoDeudasMinimos: Double
+    let pagoDeudasMinimosTexto: String
+    let pagoDeudasExtra: Double
+    let pagoDeudasExtraTexto: String
+    let quedaParaAhorro: Double
+    let quedaParaAhorroTexto: String
+    let sobreComprometido: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case ingresoEsSugerido = "ingreso_es_sugerido"
+        case ingresoEsperado = "ingreso_esperado"
+        case ingresoEsperadoTexto = "ingreso_esperado_texto"
+        case ingresoMesPasado = "ingreso_mes_pasado"
+        case ingresoMesPasadoTexto = "ingreso_mes_pasado_texto"
+        case ingresoEfectivo = "ingreso_efectivo"
+        case ingresoEfectivoTexto = "ingreso_efectivo_texto"
+        case totalAsignado = "total_asignado"
+        case totalAsignadoTexto = "total_asignado_texto"
+        case pagoDeudas = "pago_deudas"
+        case pagoDeudasTexto = "pago_deudas_texto"
+        case pagoDeudasMinimos = "pago_deudas_minimos"
+        case pagoDeudasMinimosTexto = "pago_deudas_minimos_texto"
+        case pagoDeudasExtra = "pago_deudas_extra"
+        case pagoDeudasExtraTexto = "pago_deudas_extra_texto"
+        case quedaParaAhorro = "queda_para_ahorro"
+        case quedaParaAhorroTexto = "queda_para_ahorro_texto"
+        case sobreComprometido = "sobre_comprometido"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        ingresoEsperado = try c.decodeIfPresent(Double.self, forKey: .ingresoEsperado)
+        ingresoEsperadoTexto = try c.decodeIfPresent(String.self, forKey: .ingresoEsperadoTexto)
+        ingresoEsSugerido = try c.decodeIfPresent(Bool.self, forKey: .ingresoEsSugerido) ?? true
+        ingresoMesPasado = try c.decodeIfPresent(Double.self, forKey: .ingresoMesPasado) ?? 0
+        ingresoMesPasadoTexto = try c.decodeIfPresent(String.self, forKey: .ingresoMesPasadoTexto) ?? ""
+        ingresoEfectivo = try c.decodeIfPresent(Double.self, forKey: .ingresoEfectivo) ?? 0
+        ingresoEfectivoTexto = try c.decodeIfPresent(String.self, forKey: .ingresoEfectivoTexto) ?? ""
+        totalAsignado = try c.decodeIfPresent(Double.self, forKey: .totalAsignado) ?? 0
+        totalAsignadoTexto = try c.decodeIfPresent(String.self, forKey: .totalAsignadoTexto) ?? ""
+        pagoDeudas = try c.decodeIfPresent(Double.self, forKey: .pagoDeudas) ?? 0
+        pagoDeudasTexto = try c.decodeIfPresent(String.self, forKey: .pagoDeudasTexto) ?? ""
+        pagoDeudasMinimos = try c.decodeIfPresent(Double.self, forKey: .pagoDeudasMinimos) ?? 0
+        pagoDeudasMinimosTexto = try c.decodeIfPresent(String.self, forKey: .pagoDeudasMinimosTexto) ?? ""
+        pagoDeudasExtra = try c.decodeIfPresent(Double.self, forKey: .pagoDeudasExtra) ?? 0
+        pagoDeudasExtraTexto = try c.decodeIfPresent(String.self, forKey: .pagoDeudasExtraTexto) ?? ""
+        quedaParaAhorro = try c.decodeIfPresent(Double.self, forKey: .quedaParaAhorro) ?? 0
+        quedaParaAhorroTexto = try c.decodeIfPresent(String.self, forKey: .quedaParaAhorroTexto) ?? ""
+        sobreComprometido = try c.decodeIfPresent(Bool.self, forKey: .sobreComprometido) ?? false
+    }
+
+    init(ingresoEsperado: Double? = nil, ingresoEsperadoTexto: String? = nil, ingresoEsSugerido: Bool = true,
+         ingresoMesPasado: Double = 0, ingresoMesPasadoTexto: String = "", ingresoEfectivo: Double = 0,
+         ingresoEfectivoTexto: String = "", totalAsignado: Double = 0, totalAsignadoTexto: String = "",
+         pagoDeudas: Double = 0, pagoDeudasTexto: String = "", pagoDeudasMinimos: Double = 0,
+         pagoDeudasMinimosTexto: String = "", pagoDeudasExtra: Double = 0, pagoDeudasExtraTexto: String = "",
+         quedaParaAhorro: Double = 0, quedaParaAhorroTexto: String = "", sobreComprometido: Bool = false) {
+        self.ingresoEsperado = ingresoEsperado
+        self.ingresoEsperadoTexto = ingresoEsperadoTexto
+        self.ingresoEsSugerido = ingresoEsSugerido
+        self.ingresoMesPasado = ingresoMesPasado
+        self.ingresoMesPasadoTexto = ingresoMesPasadoTexto
+        self.ingresoEfectivo = ingresoEfectivo
+        self.ingresoEfectivoTexto = ingresoEfectivoTexto
+        self.totalAsignado = totalAsignado
+        self.totalAsignadoTexto = totalAsignadoTexto
+        self.pagoDeudas = pagoDeudas
+        self.pagoDeudasTexto = pagoDeudasTexto
+        self.pagoDeudasMinimos = pagoDeudasMinimos
+        self.pagoDeudasMinimosTexto = pagoDeudasMinimosTexto
+        self.pagoDeudasExtra = pagoDeudasExtra
+        self.pagoDeudasExtraTexto = pagoDeudasExtraTexto
+        self.quedaParaAhorro = quedaParaAhorro
+        self.quedaParaAhorroTexto = quedaParaAhorroTexto
+        self.sobreComprometido = sobreComprometido
+    }
+}
+
+struct CierreFila: Codable, Identifiable {
+    var id: String { clave }
+    let clave: String
+    let etiqueta: String
+    let categoriaColor: String
+    let categoriaIcono: String
+    let limite: Double
+    let limiteTexto: String
+    let gastado: Double
+    let gastadoTexto: String
+    let diferencia: Double
+    let diferenciaTexto: String
+    let veredicto: String
+
+    enum CodingKeys: String, CodingKey {
+        case clave, etiqueta, limite, gastado, diferencia, veredicto
+        case categoriaColor = "categoria_color"
+        case categoriaIcono = "categoria_icono"
+        case limiteTexto = "limite_texto"
+        case gastadoTexto = "gastado_texto"
+        case diferenciaTexto = "diferencia_texto"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        clave = try c.decodeIfPresent(String.self, forKey: .clave) ?? ""
+        etiqueta = try c.decodeIfPresent(String.self, forKey: .etiqueta) ?? ""
+        categoriaColor = try c.decodeIfPresent(String.self, forKey: .categoriaColor) ?? ""
+        categoriaIcono = try c.decodeIfPresent(String.self, forKey: .categoriaIcono) ?? "etiqueta"
+        limite = try c.decodeIfPresent(Double.self, forKey: .limite) ?? 0
+        limiteTexto = try c.decodeIfPresent(String.self, forKey: .limiteTexto) ?? ""
+        gastado = try c.decodeIfPresent(Double.self, forKey: .gastado) ?? 0
+        gastadoTexto = try c.decodeIfPresent(String.self, forKey: .gastadoTexto) ?? ""
+        diferencia = try c.decodeIfPresent(Double.self, forKey: .diferencia) ?? 0
+        diferenciaTexto = try c.decodeIfPresent(String.self, forKey: .diferenciaTexto) ?? ""
+        veredicto = try c.decodeIfPresent(String.self, forKey: .veredicto) ?? "sin_limite"
+    }
+}
+
+/// El cierre de un mes pasado; en mes actual o futuro `cierre` = null.
+/// total_limite y total_gastado llegan SIN su *_texto.
+struct CierrePresupuesto: Codable {
+    let hayFoto: Bool
+    let entro: Double
+    let entroTexto: String
+    let salio: Double
+    let salioTexto: String
+    let teQuedo: Double
+    let teQuedoTexto: String
+    let totalLimite: Double
+    let totalGastado: Double
+    let filas: [CierreFila]
+
+    enum CodingKeys: String, CodingKey {
+        case entro, salio, filas
+        case hayFoto = "hay_foto"
+        case entroTexto = "entro_texto"
+        case salioTexto = "salio_texto"
+        case teQuedo = "te_quedo"
+        case teQuedoTexto = "te_quedo_texto"
+        case totalLimite = "total_limite"
+        case totalGastado = "total_gastado"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        hayFoto = try c.decodeIfPresent(Bool.self, forKey: .hayFoto) ?? false
+        entro = try c.decodeIfPresent(Double.self, forKey: .entro) ?? 0
+        entroTexto = try c.decodeIfPresent(String.self, forKey: .entroTexto) ?? ""
+        salio = try c.decodeIfPresent(Double.self, forKey: .salio) ?? 0
+        salioTexto = try c.decodeIfPresent(String.self, forKey: .salioTexto) ?? ""
+        teQuedo = try c.decodeIfPresent(Double.self, forKey: .teQuedo) ?? 0
+        teQuedoTexto = try c.decodeIfPresent(String.self, forKey: .teQuedoTexto) ?? ""
+        totalLimite = try c.decodeIfPresent(Double.self, forKey: .totalLimite) ?? 0
+        totalGastado = try c.decodeIfPresent(Double.self, forKey: .totalGastado) ?? 0
+        filas = try c.decodeIfPresent([CierreFila].self, forKey: .filas) ?? []
+    }
+
+    init(hayFoto: Bool = false, entro: Double = 0, entroTexto: String = "", salio: Double = 0,
+         salioTexto: String = "", teQuedo: Double = 0, teQuedoTexto: String = "",
+         totalLimite: Double = 0, totalGastado: Double = 0, filas: [CierreFila] = []) {
+        self.hayFoto = hayFoto
+        self.entro = entro
+        self.entroTexto = entroTexto
+        self.salio = salio
+        self.salioTexto = salioTexto
+        self.teQuedo = teQuedo
+        self.teQuedoTexto = teQuedoTexto
+        self.totalLimite = totalLimite
+        self.totalGastado = totalGastado
+        self.filas = filas
+    }
+}
+
+/// Una categoria del catalogo para poner topes. Ojo: aqui el color se
+/// llama `color` y el icono `icono` (en las filas es categoria_color /
+/// categoria_icono).
+struct CategoriaDisponible: Codable, Identifiable {
+    var id: String { clave }
+    let clave: String
+    let etiqueta: String
+    let icono: String
+    let color: String
+    let promedio: Double
+    let promedioTexto: String
+
+    enum CodingKeys: String, CodingKey {
+        case clave, etiqueta, icono, color, promedio
+        case promedioTexto = "promedio_texto"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        clave = try c.decodeIfPresent(String.self, forKey: .clave) ?? ""
+        etiqueta = try c.decodeIfPresent(String.self, forKey: .etiqueta) ?? ""
+        icono = try c.decodeIfPresent(String.self, forKey: .icono) ?? "etiqueta"
+        color = try c.decodeIfPresent(String.self, forKey: .color) ?? ""
+        promedio = try c.decodeIfPresent(Double.self, forKey: .promedio) ?? 0
+        promedioTexto = try c.decodeIfPresent(String.self, forKey: .promedioTexto) ?? ""
+    }
+
+    init(clave: String = "", etiqueta: String = "", icono: String = "etiqueta", color: String = "",
+         promedio: Double = 0, promedioTexto: String = "") {
+        self.clave = clave
+        self.etiqueta = etiqueta
+        self.icono = icono
+        self.color = color
+        self.promedio = promedio
+        self.promedioTexto = promedioTexto
+    }
+}
+
+/// La pantalla Presupuesto entera (respuesta de GET y de TODAS las
+/// escrituras: cada guardado devuelve la pantalla recalculada y el
+/// modelo la sustituye).
+struct PresupuestoPantalla: Codable {
+    let mes: String
+    let mesEtiqueta: String
+    let esMesActual: Bool
+    let hayPresupuesto: Bool
+    let resumen: PresupuestoResumen
+    let servicios: PresupuestoServicios
+    let ingresos: PresupuestoIngresos
+    let metaAhorro: MetaAhorroPresupuesto
+    let filas: [PresupuestoPantallaFila]
+    let todoLoDemas: TodoLoDemas
+    let plan: PlanPresupuesto
+    let cierre: CierrePresupuesto?
+    let categoriasDisponibles: [CategoriaDisponible]
+
+    enum CodingKeys: String, CodingKey {
+        case mes, resumen, servicios, ingresos, filas, plan, cierre
+        case mesEtiqueta = "mes_etiqueta"
+        case esMesActual = "es_mes_actual"
+        case hayPresupuesto = "hay_presupuesto"
+        case metaAhorro = "meta_ahorro"
+        case todoLoDemas = "todo_lo_demas"
+        case categoriasDisponibles = "categorias_disponibles"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        mes = try c.decodeIfPresent(String.self, forKey: .mes) ?? ""
+        mesEtiqueta = try c.decodeIfPresent(String.self, forKey: .mesEtiqueta) ?? ""
+        esMesActual = try c.decodeIfPresent(Bool.self, forKey: .esMesActual) ?? false
+        hayPresupuesto = try c.decodeIfPresent(Bool.self, forKey: .hayPresupuesto) ?? false
+        resumen = try c.decodeIfPresent(PresupuestoResumen.self, forKey: .resumen) ?? PresupuestoResumen()
+        servicios = try c.decodeIfPresent(PresupuestoServicios.self, forKey: .servicios) ?? PresupuestoServicios()
+        ingresos = try c.decodeIfPresent(PresupuestoIngresos.self, forKey: .ingresos) ?? PresupuestoIngresos()
+        metaAhorro = try c.decodeIfPresent(MetaAhorroPresupuesto.self, forKey: .metaAhorro) ?? MetaAhorroPresupuesto()
+        filas = try c.decodeIfPresent([PresupuestoPantallaFila].self, forKey: .filas) ?? []
+        todoLoDemas = try c.decodeIfPresent(TodoLoDemas.self, forKey: .todoLoDemas) ?? TodoLoDemas()
+        plan = try c.decodeIfPresent(PlanPresupuesto.self, forKey: .plan) ?? PlanPresupuesto()
+        cierre = try c.decodeIfPresent(CierrePresupuesto.self, forKey: .cierre)
+        categoriasDisponibles = try c.decodeIfPresent([CategoriaDisponible].self, forKey: .categoriasDisponibles) ?? []
+    }
+}
+
+// MARK: - Pronostico
+
+struct PronosticoPunto: Codable {
+    let fecha: String
+    let saldo: Double
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        fecha = try c.decodeIfPresent(String.self, forKey: .fecha) ?? ""
+        saldo = try c.decodeIfPresent(Double.self, forKey: .saldo) ?? 0
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case fecha, saldo
+    }
+
+    init(fecha: String = "", saldo: Double = 0) {
+        self.fecha = fecha
+        self.saldo = saldo
+    }
+}
+
+struct PronosticoCuenta: Codable, Identifiable {
+    var id: String { nombre }
+    let nombre: String
+    let saldoInicial: Double
+    let saldoInicialTexto: String
+    let saldoFinal: Double
+    let saldoFinalTexto: String
+
+    enum CodingKeys: String, CodingKey {
+        case nombre
+        case saldoInicial = "saldo_inicial"
+        case saldoInicialTexto = "saldo_inicial_texto"
+        case saldoFinal = "saldo_final"
+        case saldoFinalTexto = "saldo_final_texto"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        nombre = try c.decodeIfPresent(String.self, forKey: .nombre) ?? ""
+        saldoInicial = try c.decodeIfPresent(Double.self, forKey: .saldoInicial) ?? 0
+        saldoInicialTexto = try c.decodeIfPresent(String.self, forKey: .saldoInicialTexto) ?? ""
+        saldoFinal = try c.decodeIfPresent(Double.self, forKey: .saldoFinal) ?? 0
+        saldoFinalTexto = try c.decodeIfPresent(String.self, forKey: .saldoFinalTexto) ?? ""
+    }
+}
+
+/// Un evento que viene: la UI no distingue por `tipo`, distingue por el
+/// SIGNO de `monto` (positivo entra, negativo sale). monto puede ser null.
+struct PronosticoEvento: Codable {
+    let fecha: String
+    let fechaTexto: String
+    let tipo: String
+    let titulo: String
+    let cuentaTexto: String?
+    let monto: Double?
+    let montoTexto: String?
+
+    enum CodingKeys: String, CodingKey {
+        case fecha, tipo, titulo, monto
+        case fechaTexto = "fecha_texto"
+        case cuentaTexto = "cuenta_texto"
+        case montoTexto = "monto_texto"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        fecha = try c.decodeIfPresent(String.self, forKey: .fecha) ?? ""
+        fechaTexto = try c.decodeIfPresent(String.self, forKey: .fechaTexto) ?? ""
+        tipo = try c.decodeIfPresent(String.self, forKey: .tipo) ?? ""
+        titulo = try c.decodeIfPresent(String.self, forKey: .titulo) ?? ""
+        cuentaTexto = try c.decodeIfPresent(String.self, forKey: .cuentaTexto)
+        monto = try c.decodeIfPresent(Double.self, forKey: .monto)
+        montoTexto = try c.decodeIfPresent(String.self, forKey: .montoTexto)
+    }
+}
+
+/// La comparacion con/sin plan de deudas (solo llega con plan aplicado;
+/// varios campos la UI no los pinta, pero el DTO los trae completos).
+struct ComparacionPlan: Codable {
+    let estrategia: String
+    let extra: Double
+    let extraTexto: String
+    let presupuestoMensual: Double
+    let presupuestoMensualTexto: String
+    let sumaMinimos: Double
+    let sumaMinimosTexto: String
+    let fechaLibreConPlan: String?
+    let fechaLibreConPlanTexto: String?
+    let fechaLibreSinPlan: String?
+    let fechaLibreSinPlanTexto: String?
+    let interesConPlan: Double
+    let interesConPlanTexto: String
+    let interesSinPlan: Double
+    let interesSinPlanTexto: String
+    let interesAhorrado: Double
+    let interesAhorradoTexto: String
+
+    enum CodingKeys: String, CodingKey {
+        case estrategia, extra
+        case extraTexto = "extra_texto"
+        case presupuestoMensual = "presupuesto_mensual"
+        case presupuestoMensualTexto = "presupuesto_mensual_texto"
+        case sumaMinimos = "suma_minimos"
+        case sumaMinimosTexto = "suma_minimos_texto"
+        case fechaLibreConPlan = "fecha_libre_con_plan"
+        case fechaLibreConPlanTexto = "fecha_libre_con_plan_texto"
+        case fechaLibreSinPlan = "fecha_libre_sin_plan"
+        case fechaLibreSinPlanTexto = "fecha_libre_sin_plan_texto"
+        case interesConPlan = "interes_con_plan"
+        case interesConPlanTexto = "interes_con_plan_texto"
+        case interesSinPlan = "interes_sin_plan"
+        case interesSinPlanTexto = "interes_sin_plan_texto"
+        case interesAhorrado = "interes_ahorrado"
+        case interesAhorradoTexto = "interes_ahorrado_texto"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        estrategia = try c.decodeIfPresent(String.self, forKey: .estrategia) ?? ""
+        extra = try c.decodeIfPresent(Double.self, forKey: .extra) ?? 0
+        extraTexto = try c.decodeIfPresent(String.self, forKey: .extraTexto) ?? ""
+        presupuestoMensual = try c.decodeIfPresent(Double.self, forKey: .presupuestoMensual) ?? 0
+        presupuestoMensualTexto = try c.decodeIfPresent(String.self, forKey: .presupuestoMensualTexto) ?? ""
+        sumaMinimos = try c.decodeIfPresent(Double.self, forKey: .sumaMinimos) ?? 0
+        sumaMinimosTexto = try c.decodeIfPresent(String.self, forKey: .sumaMinimosTexto) ?? ""
+        fechaLibreConPlan = try c.decodeIfPresent(String.self, forKey: .fechaLibreConPlan)
+        fechaLibreConPlanTexto = try c.decodeIfPresent(String.self, forKey: .fechaLibreConPlanTexto)
+        fechaLibreSinPlan = try c.decodeIfPresent(String.self, forKey: .fechaLibreSinPlan)
+        fechaLibreSinPlanTexto = try c.decodeIfPresent(String.self, forKey: .fechaLibreSinPlanTexto)
+        interesConPlan = try c.decodeIfPresent(Double.self, forKey: .interesConPlan) ?? 0
+        interesConPlanTexto = try c.decodeIfPresent(String.self, forKey: .interesConPlanTexto) ?? ""
+        interesSinPlan = try c.decodeIfPresent(Double.self, forKey: .interesSinPlan) ?? 0
+        interesSinPlanTexto = try c.decodeIfPresent(String.self, forKey: .interesSinPlanTexto) ?? ""
+        interesAhorrado = try c.decodeIfPresent(Double.self, forKey: .interesAhorrado) ?? 0
+        interesAhorradoTexto = try c.decodeIfPresent(String.self, forKey: .interesAhorradoTexto) ?? ""
+    }
+}
+
+/// El Pronostico entero (GET api/v1/pronostico): el servidor calcula la
+/// serie diaria, el minimo, la alerta y los totales; la app solo pinta
+/// y escala la grafica con los puntos dados.
+struct Pronostico: Codable {
+    let meses: Int
+    let conPlan: Bool
+    let tienePlan: Bool
+    let tieneDeudas: Bool
+    let avisoPlan: String?
+    let saldoInicial: Double
+    let saldoInicialTexto: String
+    let saldoFinal: Double
+    let saldoFinalTexto: String
+    let saldoMinimo: Double
+    let saldoMinimoTexto: String
+    let fechaSaldoMinimo: String
+    let fechaSaldoMinimoTexto: String
+    let alertaFecha: String?
+    let alertaFechaTexto: String?
+    let totalIngresos: Double
+    let totalIngresosTexto: String
+    let totalEgresos: Double
+    let totalEgresosTexto: String
+    let serie: [PronosticoPunto]
+    let porCuenta: [PronosticoCuenta]
+    let eventos: [PronosticoEvento]
+    let comparacion: ComparacionPlan?
+
+    enum CodingKeys: String, CodingKey {
+        case meses, serie, eventos, comparacion
+        case conPlan = "con_plan"
+        case tienePlan = "tiene_plan"
+        case tieneDeudas = "tiene_deudas"
+        case avisoPlan = "aviso_plan"
+        case saldoInicial = "saldo_inicial"
+        case saldoInicialTexto = "saldo_inicial_texto"
+        case saldoFinal = "saldo_final"
+        case saldoFinalTexto = "saldo_final_texto"
+        case saldoMinimo = "saldo_minimo"
+        case saldoMinimoTexto = "saldo_minimo_texto"
+        case fechaSaldoMinimo = "fecha_saldo_minimo"
+        case fechaSaldoMinimoTexto = "fecha_saldo_minimo_texto"
+        case alertaFecha = "alerta_fecha"
+        case alertaFechaTexto = "alerta_fecha_texto"
+        case totalIngresos = "total_ingresos"
+        case totalIngresosTexto = "total_ingresos_texto"
+        case totalEgresos = "total_egresos"
+        case totalEgresosTexto = "total_egresos_texto"
+        case porCuenta = "por_cuenta"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        meses = try c.decodeIfPresent(Int.self, forKey: .meses) ?? 3
+        conPlan = try c.decodeIfPresent(Bool.self, forKey: .conPlan) ?? false
+        tienePlan = try c.decodeIfPresent(Bool.self, forKey: .tienePlan) ?? false
+        tieneDeudas = try c.decodeIfPresent(Bool.self, forKey: .tieneDeudas) ?? false
+        avisoPlan = try c.decodeIfPresent(String.self, forKey: .avisoPlan)
+        saldoInicial = try c.decodeIfPresent(Double.self, forKey: .saldoInicial) ?? 0
+        saldoInicialTexto = try c.decodeIfPresent(String.self, forKey: .saldoInicialTexto) ?? ""
+        saldoFinal = try c.decodeIfPresent(Double.self, forKey: .saldoFinal) ?? 0
+        saldoFinalTexto = try c.decodeIfPresent(String.self, forKey: .saldoFinalTexto) ?? ""
+        saldoMinimo = try c.decodeIfPresent(Double.self, forKey: .saldoMinimo) ?? 0
+        saldoMinimoTexto = try c.decodeIfPresent(String.self, forKey: .saldoMinimoTexto) ?? ""
+        fechaSaldoMinimo = try c.decodeIfPresent(String.self, forKey: .fechaSaldoMinimo) ?? ""
+        fechaSaldoMinimoTexto = try c.decodeIfPresent(String.self, forKey: .fechaSaldoMinimoTexto) ?? ""
+        alertaFecha = try c.decodeIfPresent(String.self, forKey: .alertaFecha)
+        alertaFechaTexto = try c.decodeIfPresent(String.self, forKey: .alertaFechaTexto)
+        totalIngresos = try c.decodeIfPresent(Double.self, forKey: .totalIngresos) ?? 0
+        totalIngresosTexto = try c.decodeIfPresent(String.self, forKey: .totalIngresosTexto) ?? ""
+        totalEgresos = try c.decodeIfPresent(Double.self, forKey: .totalEgresos) ?? 0
+        totalEgresosTexto = try c.decodeIfPresent(String.self, forKey: .totalEgresosTexto) ?? ""
+        serie = try c.decodeIfPresent([PronosticoPunto].self, forKey: .serie) ?? []
+        porCuenta = try c.decodeIfPresent([PronosticoCuenta].self, forKey: .porCuenta) ?? []
+        eventos = try c.decodeIfPresent([PronosticoEvento].self, forKey: .eventos) ?? []
+        comparacion = try c.decodeIfPresent(ComparacionPlan.self, forKey: .comparacion)
+    }
+}
+
+// MARK: - Patrimonio y Metas (mapa-patrimonio-metas.md)
+
+/// La foto completa de Patrimonio (GET/POST/PUT/DELETE de
+/// api/v1/patrimonio…): sin envoltura. Las tres series comparten el
+/// punto del Panel (`PuntoPatrimonio`): en `serieActivos` y
+/// `serieDeudas` el campo `neto` trae el total de ese lado.
+struct PatrimonioDto: Codable {
+    let rango: String
+    let rangosDisponibles: [String]
+    let neto: Double
+    let netoTexto: String
+    let activos: Double
+    let activosTexto: String
+    let deudas: Double
+    let deudasTexto: String
+    let cambio: Double?
+    let cambioTexto: String?
+    let cambioActivos: Double?
+    let cambioActivosTexto: String?
+    let cambioDeudas: Double?
+    let cambioDeudasTexto: String?
+    let serie: [PuntoPatrimonio]
+    let serieActivos: [PuntoPatrimonio]
+    let serieDeudas: [PuntoPatrimonio]
+    let activosGrupos: [PatrimonioGrupoDto]
+    let deudasGrupos: [PatrimonioGrupoDto]
+    let bienes: [BienManualDto]
+    let sinDatos: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case rango, neto, activos, deudas, cambio, serie, bienes
+        case rangosDisponibles = "rangos_disponibles"
+        case netoTexto = "neto_texto"
+        case activosTexto = "activos_texto"
+        case deudasTexto = "deudas_texto"
+        case cambioTexto = "cambio_texto"
+        case cambioActivos = "cambio_activos"
+        case cambioActivosTexto = "cambio_activos_texto"
+        case cambioDeudas = "cambio_deudas"
+        case cambioDeudasTexto = "cambio_deudas_texto"
+        case serieActivos = "serie_activos"
+        case serieDeudas = "serie_deudas"
+        case activosGrupos = "activos_grupos"
+        case deudasGrupos = "deudas_grupos"
+        case sinDatos = "sin_datos"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        rango = try c.decodeIfPresent(String.self, forKey: .rango) ?? "3M"
+        rangosDisponibles = try c.decodeIfPresent([String].self, forKey: .rangosDisponibles) ?? []
+        neto = try c.decodeIfPresent(Double.self, forKey: .neto) ?? 0
+        netoTexto = try c.decodeIfPresent(String.self, forKey: .netoTexto) ?? ""
+        activos = try c.decodeIfPresent(Double.self, forKey: .activos) ?? 0
+        activosTexto = try c.decodeIfPresent(String.self, forKey: .activosTexto) ?? ""
+        deudas = try c.decodeIfPresent(Double.self, forKey: .deudas) ?? 0
+        deudasTexto = try c.decodeIfPresent(String.self, forKey: .deudasTexto) ?? ""
+        cambio = try c.decodeIfPresent(Double.self, forKey: .cambio)
+        cambioTexto = try c.decodeIfPresent(String.self, forKey: .cambioTexto)
+        cambioActivos = try c.decodeIfPresent(Double.self, forKey: .cambioActivos)
+        cambioActivosTexto = try c.decodeIfPresent(String.self, forKey: .cambioActivosTexto)
+        cambioDeudas = try c.decodeIfPresent(Double.self, forKey: .cambioDeudas)
+        cambioDeudasTexto = try c.decodeIfPresent(String.self, forKey: .cambioDeudasTexto)
+        serie = try c.decodeIfPresent([PuntoPatrimonio].self, forKey: .serie) ?? []
+        serieActivos = try c.decodeIfPresent([PuntoPatrimonio].self, forKey: .serieActivos) ?? []
+        serieDeudas = try c.decodeIfPresent([PuntoPatrimonio].self, forKey: .serieDeudas) ?? []
+        activosGrupos = try c.decodeIfPresent([PatrimonioGrupoDto].self, forKey: .activosGrupos) ?? []
+        deudasGrupos = try c.decodeIfPresent([PatrimonioGrupoDto].self, forKey: .deudasGrupos) ?? []
+        bienes = try c.decodeIfPresent([BienManualDto].self, forKey: .bienes) ?? []
+        sinDatos = try c.decodeIfPresent(Bool.self, forKey: .sinDatos) ?? false
+    }
+}
+
+/// Un grupo de la clasificacion por tipo (una de las 8 claves); la
+/// etiqueta la manda el servidor y se pinta tal cual.
+struct PatrimonioGrupoDto: Codable, Identifiable {
+    var id: String { clave }
+    let clave: String
+    let etiqueta: String
+    let subtotal: Double
+    let subtotalTexto: String
+    let pct: Double
+    let items: [PatrimonioItemDto]
+
+    enum CodingKeys: String, CodingKey {
+        case clave, etiqueta, subtotal, pct, items
+        case subtotalTexto = "subtotal_texto"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        clave = try c.decodeIfPresent(String.self, forKey: .clave) ?? ""
+        etiqueta = try c.decodeIfPresent(String.self, forKey: .etiqueta) ?? ""
+        subtotal = try c.decodeIfPresent(Double.self, forKey: .subtotal) ?? 0
+        subtotalTexto = try c.decodeIfPresent(String.self, forKey: .subtotalTexto) ?? ""
+        pct = try c.decodeIfPresent(Double.self, forKey: .pct) ?? 0
+        items = try c.decodeIfPresent([PatrimonioItemDto].self, forKey: .items) ?? []
+    }
+}
+
+struct PatrimonioItemDto: Codable {
+    let nombre: String
+    let monto: Double
+    let montoTexto: String
+    /// En items de activo el servidor ni manda la clave (llega nil).
+    let detalle: String?
+    /// Solo en items que salen de un registro Debt; la UI no lo usa.
+    let deudaId: Int?
+    /// La llave para abrir la edicion: se cruza contra `bienes`.
+    let manualId: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case nombre, monto, detalle
+        case montoTexto = "monto_texto"
+        case deudaId = "deuda_id"
+        case manualId = "manual_id"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        nombre = try c.decodeIfPresent(String.self, forKey: .nombre) ?? ""
+        monto = try c.decodeIfPresent(Double.self, forKey: .monto) ?? 0
+        montoTexto = try c.decodeIfPresent(String.self, forKey: .montoTexto) ?? ""
+        detalle = try c.decodeIfPresent(String.self, forKey: .detalle)
+        deudaId = try c.decodeIfPresent(Int.self, forKey: .deudaId)
+        manualId = try c.decodeIfPresent(Int.self, forKey: .manualId)
+    }
+}
+
+/// El registro editable detras de los items con `manualId`.
+struct BienManualDto: Codable, Identifiable {
+    let id: Int
+    let nombre: String
+    let kind: String
+    let grupo: String?
+    let monto: Double
+    let montoTexto: String
+    let conPrestamo: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case id, nombre, kind, grupo, monto
+        case montoTexto = "monto_texto"
+        case conPrestamo = "con_prestamo"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(Int.self, forKey: .id) ?? 0
+        nombre = try c.decodeIfPresent(String.self, forKey: .nombre) ?? ""
+        kind = try c.decodeIfPresent(String.self, forKey: .kind) ?? ""
+        grupo = try c.decodeIfPresent(String.self, forKey: .grupo)
+        monto = try c.decodeIfPresent(Double.self, forKey: .monto) ?? 0
+        montoTexto = try c.decodeIfPresent(String.self, forKey: .montoTexto) ?? ""
+        conPrestamo = try c.decodeIfPresent(Bool.self, forKey: .conPrestamo) ?? false
+    }
+}
+
+/// La respuesta de GET api/v1/metas (sin envoltura).
+struct MetasDto: Codable {
+    let metas: [MetaDto]
+    let archivadas: [MetaDto]
+    let cuentas: [CuentaSimpleDto]
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        metas = try c.decodeIfPresent([MetaDto].self, forKey: .metas) ?? []
+        archivadas = try c.decodeIfPresent([MetaDto].self, forKey: .archivadas) ?? []
+        cuentas = try c.decodeIfPresent([CuentaSimpleDto].self, forKey: .cuentas) ?? []
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case metas, archivadas, cuentas
+    }
+}
+
+struct MetaDto: Codable, Identifiable {
+    let id: Int
+    let nombre: String
+    /// Sale de `monto_objetivo` del registro.
+    let objetivo: Double
+    let objetivoTexto: String
+    let montoInicial: Double
+    /// Progreso real (inicial + movimientos): puede ser negativo.
+    let ahorrado: Double
+    let ahorradoTexto: String
+    /// Ya viene con piso 0 y tope 100, 1 decimal.
+    let porcentaje: Double
+    let faltante: Double
+    let faltanteTexto: String
+    let fechaObjetivo: String?
+    let fechaObjetivoTexto: String?
+    let diasRestantes: Int?
+    let apartadoMensual: Double?
+    let apartadoMensualTexto: String?
+    let estado: String
+    let frase: String
+    let completada: Bool
+    let archivada: Bool
+    /// La cuenta se devuelve como `cuenta_id` (la ida es
+    /// `financial_account_id`).
+    let cuentaId: Int?
+    let cuentaNombre: String?
+    let movimientos: [MetaMovimientoDto]
+
+    enum CodingKeys: String, CodingKey {
+        case id, nombre, porcentaje, faltante, estado, frase, completada, archivada, movimientos
+        case objetivo
+        case objetivoTexto = "objetivo_texto"
+        case montoInicial = "monto_inicial"
+        case ahorrado
+        case ahorradoTexto = "ahorrado_texto"
+        case faltanteTexto = "faltante_texto"
+        case fechaObjetivo = "fecha_objetivo"
+        case fechaObjetivoTexto = "fecha_objetivo_texto"
+        case diasRestantes = "dias_restantes"
+        case apartadoMensual = "apartado_mensual"
+        case apartadoMensualTexto = "apartado_mensual_texto"
+        case cuentaId = "cuenta_id"
+        case cuentaNombre = "cuenta_nombre"
+    }
+
+    init(id: Int = 0, nombre: String = "", objetivo: Double = 0, objetivoTexto: String = "",
+         montoInicial: Double = 0, ahorrado: Double = 0, ahorradoTexto: String = "",
+         porcentaje: Double = 0, faltante: Double = 0, faltanteTexto: String = "",
+         fechaObjetivo: String? = nil, fechaObjetivoTexto: String? = nil,
+         diasRestantes: Int? = nil, apartadoMensual: Double? = nil,
+         apartadoMensualTexto: String? = nil, estado: String = "", frase: String = "",
+         completada: Bool = false, archivada: Bool = false,
+         cuentaId: Int? = nil, cuentaNombre: String? = nil,
+         movimientos: [MetaMovimientoDto] = []) {
+        self.id = id
+        self.nombre = nombre
+        self.objetivo = objetivo
+        self.objetivoTexto = objetivoTexto
+        self.montoInicial = montoInicial
+        self.ahorrado = ahorrado
+        self.ahorradoTexto = ahorradoTexto
+        self.porcentaje = porcentaje
+        self.faltante = faltante
+        self.faltanteTexto = faltanteTexto
+        self.fechaObjetivo = fechaObjetivo
+        self.fechaObjetivoTexto = fechaObjetivoTexto
+        self.diasRestantes = diasRestantes
+        self.apartadoMensual = apartadoMensual
+        self.apartadoMensualTexto = apartadoMensualTexto
+        self.estado = estado
+        self.frase = frase
+        self.completada = completada
+        self.archivada = archivada
+        self.cuentaId = cuentaId
+        self.cuentaNombre = cuentaNombre
+        self.movimientos = movimientos
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(Int.self, forKey: .id) ?? 0
+        nombre = try c.decodeIfPresent(String.self, forKey: .nombre) ?? ""
+        objetivo = try c.decodeIfPresent(Double.self, forKey: .objetivo) ?? 0
+        objetivoTexto = try c.decodeIfPresent(String.self, forKey: .objetivoTexto) ?? ""
+        montoInicial = try c.decodeIfPresent(Double.self, forKey: .montoInicial) ?? 0
+        ahorrado = try c.decodeIfPresent(Double.self, forKey: .ahorrado) ?? 0
+        ahorradoTexto = try c.decodeIfPresent(String.self, forKey: .ahorradoTexto) ?? ""
+        porcentaje = try c.decodeIfPresent(Double.self, forKey: .porcentaje) ?? 0
+        faltante = try c.decodeIfPresent(Double.self, forKey: .faltante) ?? 0
+        faltanteTexto = try c.decodeIfPresent(String.self, forKey: .faltanteTexto) ?? ""
+        fechaObjetivo = try c.decodeIfPresent(String.self, forKey: .fechaObjetivo)
+        fechaObjetivoTexto = try c.decodeIfPresent(String.self, forKey: .fechaObjetivoTexto)
+        diasRestantes = try c.decodeIfPresent(Int.self, forKey: .diasRestantes)
+        apartadoMensual = try c.decodeIfPresent(Double.self, forKey: .apartadoMensual)
+        apartadoMensualTexto = try c.decodeIfPresent(String.self, forKey: .apartadoMensualTexto)
+        estado = try c.decodeIfPresent(String.self, forKey: .estado) ?? ""
+        frase = try c.decodeIfPresent(String.self, forKey: .frase) ?? ""
+        completada = try c.decodeIfPresent(Bool.self, forKey: .completada) ?? false
+        archivada = try c.decodeIfPresent(Bool.self, forKey: .archivada) ?? false
+        cuentaId = try c.decodeIfPresent(Int.self, forKey: .cuentaId)
+        cuentaNombre = try c.decodeIfPresent(String.self, forKey: .cuentaNombre)
+        movimientos = try c.decodeIfPresent([MetaMovimientoDto].self, forKey: .movimientos) ?? []
+    }
+}
+
+struct MetaMovimientoDto: Codable, Identifiable {
+    let id: Int
+    let fecha: String
+    let fechaTexto: String
+    /// Positivo = aportacion, negativo = retiro.
+    let monto: Double
+    let montoTexto: String
+    let nota: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, fecha, monto, nota
+        case fechaTexto = "fecha_texto"
+        case montoTexto = "monto_texto"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(Int.self, forKey: .id) ?? 0
+        fecha = try c.decodeIfPresent(String.self, forKey: .fecha) ?? ""
+        fechaTexto = try c.decodeIfPresent(String.self, forKey: .fechaTexto) ?? ""
+        monto = try c.decodeIfPresent(Double.self, forKey: .monto) ?? 0
+        montoTexto = try c.decodeIfPresent(String.self, forKey: .montoTexto) ?? ""
+        nota = try c.decodeIfPresent(String.self, forKey: .nota)
+    }
+}
+
+struct CuentaSimpleDto: Codable, Identifiable {
+    let id: Int
+    let nombre: String
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(Int.self, forKey: .id) ?? 0
+        nombre = try c.decodeIfPresent(String.self, forKey: .nombre) ?? ""
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, nombre
+    }
+}
+
+/// Respuesta de crear/editar/archivar/aportar una meta. Como en la
+/// Android, el cliente la descarta y recarga el GET completo; se
+/// decodifica solo para validar que el servidor respondio bien.
+struct MetaRespuestaDto: Codable {
+    let meta: MetaDto
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        meta = try c.decodeIfPresent(MetaDto.self, forKey: .meta) ?? MetaDto()
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case meta
+    }
+}

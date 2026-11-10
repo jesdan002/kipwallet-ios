@@ -17,6 +17,10 @@
 		ED4ABE52E4AAA3B45EEB7FB4 /* MovimientosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A5313821A5F7C18E3AE5FAA /* MovimientosView.swift */; };
 		1B7A6C337153C318640AEA83 /* NotificacionesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A199A5559301AD19ACD3E5AE /* NotificacionesView.swift */; };
 		A964AEE13039A8BD4713D785 /* RecurrentesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0EFE206DFF807D544D4FAD0 /* RecurrentesView.swift */; };
+		8C2D54E1A7094B3F86D1A690 /* PronosticoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41F9C6B2D8054EA3B7C20E98 /* PronosticoView.swift */; };
+		3F7A21C9B4D84E06A51F9C27 /* PresupuestoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B1E08D3F6A24C7B90E3D514 /* PresupuestoView.swift */; };
+		E1F0A2B3C4D5E6F708192A02 /* PatrimonioView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1F0A2B3C4D5E6F708192A01 /* PatrimonioView.swift */; };
+		E1F0A2B3C4D5E6F708192A04 /* MetasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1F0A2B3C4D5E6F708192A03 /* MetasView.swift */; };
         FC517E94F77D44FDB15126EB /* KipwalletApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABEA54C0A056430A95C042B5 /* KipwalletApp.swift */; };
         832CC9895C684F7DBB1D0E8D /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA52AFA689FE4052A135BBE2 /* ContentView.swift */; };
         FFC0357B034C49A58ECC8744 /* KipColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = A78CFB400C484E01B859BBB2 /* KipColors.swift */; };
@@ -45,6 +49,10 @@
 		1A5313821A5F7C18E3AE5FAA /* MovimientosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovimientosView.swift; sourceTree = "<group>"; };
 		A199A5559301AD19ACD3E5AE /* NotificacionesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificacionesView.swift; sourceTree = "<group>"; };
 		B0EFE206DFF807D544D4FAD0 /* RecurrentesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurrentesView.swift; sourceTree = "<group>"; };
+		41F9C6B2D8054EA3B7C20E98 /* PronosticoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PronosticoView.swift; sourceTree = "<group>"; };
+		5B1E08D3F6A24C7B90E3D514 /* PresupuestoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresupuestoView.swift; sourceTree = "<group>"; };
+		E1F0A2B3C4D5E6F708192A01 /* PatrimonioView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatrimonioView.swift; sourceTree = "<group>"; };
+		E1F0A2B3C4D5E6F708192A03 /* MetasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetasView.swift; sourceTree = "<group>"; };
         47161297F1A847DB84344A17 /* Kipwallet.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Kipwallet.app; sourceTree = BUILT_PRODUCTS_DIR; };
         ABEA54C0A056430A95C042B5 /* KipwalletApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KipwalletApp.swift; sourceTree = "<group>"; };
         AA52AFA689FE4052A135BBE2 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -119,6 +127,10 @@
                             1A5313821A5F7C18E3AE5FAA /* MovimientosView.swift */,
                             A199A5559301AD19ACD3E5AE /* NotificacionesView.swift */,
                             B0EFE206DFF807D544D4FAD0 /* RecurrentesView.swift */,
+                            41F9C6B2D8054EA3B7C20E98 /* PronosticoView.swift */,
+                            5B1E08D3F6A24C7B90E3D514 /* PresupuestoView.swift */,
+                            E1F0A2B3C4D5E6F708192A01 /* PatrimonioView.swift */,
+                            E1F0A2B3C4D5E6F708192A03 /* MetasView.swift */,
             );
             path = Kipwallet;
             sourceTree = "<group>";
@@ -227,6 +239,10 @@
                 ED4ABE52E4AAA3B45EEB7FB4 /* MovimientosView.swift in Sources */,
                 1B7A6C337153C318640AEA83 /* NotificacionesView.swift in Sources */,
                 A964AEE13039A8BD4713D785 /* RecurrentesView.swift in Sources */,
+                8C2D54E1A7094B3F86D1A690 /* PronosticoView.swift in Sources */,
+                3F7A21C9B4D84E06A51F9C27 /* PresupuestoView.swift in Sources */,
+                E1F0A2B3C4D5E6F708192A02 /* PatrimonioView.swift in Sources */,
+                E1F0A2B3C4D5E6F708192A04 /* MetasView.swift in Sources */,
             );
             runOnlyForDeploymentPostprocessing = 0;
         };

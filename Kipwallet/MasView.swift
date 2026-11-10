@@ -30,6 +30,10 @@ struct MasView: View {
     @Environment(\.colorScheme) private var scheme
     var alIrRecurrentes: () -> Void = {}
     var alIrAjustes: () -> Void = {}
+    var alIrPatrimonio: () -> Void = {}
+    var alIrMetas: () -> Void = {}
+    var alIrPresupuesto: () -> Void = {}
+    var alIrPronostico: () -> Void = {}
     @StateObject private var modelo = MasModelo()
     @State private var sub: String? = nil
     @State private var avisoConstruccion: String? = nil
@@ -94,13 +98,13 @@ struct MasView: View {
             mosaico(titulo: "Recurrentes", texto: "Tus cobros que se repiten y el calendario",
                     simbolo: "repeat", color: KipPastel.indigo) { alIrRecurrentes() }
             mosaico(titulo: "Patrimonio", texto: "Lo que tienes menos lo que debes",
-                    simbolo: "wallet.pass.fill", color: KipPastel.cafe) { avisoConstruccion = "Patrimonio" }
+                    simbolo: "wallet.pass.fill", color: KipPastel.cafe) { alIrPatrimonio() }
             mosaico(titulo: "Metas", texto: "Ahorra para lo que quieres lograr",
-                    simbolo: "target", color: KipPastel.verde) { avisoConstruccion = "Metas" }
+                    simbolo: "target", color: KipPastel.verde) { alIrMetas() }
             mosaico(titulo: "Presupuesto", texto: "Lo que entra, lo que sale y tu plan del mes",
-                    simbolo: "chart.pie.fill", color: KipPastel.naranja) { avisoConstruccion = "Presupuesto" }
+                    simbolo: "chart.pie.fill", color: KipPastel.naranja) { alIrPresupuesto() }
             mosaico(titulo: "Pronóstico", texto: "Cómo se ve tu dinero en los próximos meses",
-                    simbolo: "chart.line.uptrend.xyaxis", color: KipPastel.morado) { avisoConstruccion = "Pronóstico" }
+                    simbolo: "chart.line.uptrend.xyaxis", color: KipPastel.morado) { alIrPronostico() }
         }
         .padding(.horizontal, 16)
         .padding(.top, 16)

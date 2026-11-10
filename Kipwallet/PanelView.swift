@@ -44,6 +44,13 @@ enum RutaApp: Hashable {
     case recurrentes
     case ajustes
     case notificaciones
+    /// La pantalla Presupuesto; el valor asociado es la clave de la
+    /// categoria cuyo tope se abre a editar al llegar (entrada desde el
+    /// detalle de categoria), o nil al entrar desde el mosaico de Mas.
+    case presupuesto(claveEditar: String?)
+    case pronostico
+    case patrimonio
+    case metas
 }
 
 /// La raiz ya con sesion: las 5 pestanas de la capsula y la pila de
@@ -55,6 +62,9 @@ struct AppPrincipalView: View {
     @StateObject private var modelo = PanelModel()
     @State private var selected = 2
     @State private var pila: [RutaApp] = []
+    #if DEBUG
+    @State private var ganchoAplicado = false
+    #endif
     @State private var sinLeer = 0
     @AppStorage("kw_modo_tema") private var modoTema = "sistema"
 
@@ -77,7 +87,11 @@ struct AppPrincipalView: View {
                                 MovimientosView(alAbrirFicha: { pila.append(.ficha($0)) })
                             case 4:
                                 MasView(alIrRecurrentes: { pila.append(.recurrentes) },
-                                        alIrAjustes: { pila.append(.ajustes) })
+                                        alIrAjustes: { pila.append(.ajustes) },
+                                        alIrPatrimonio: { pila.append(.patrimonio) },
+                                        alIrMetas: { pila.append(.metas) },
+                                        alIrPresupuesto: { pila.append(.presupuesto(claveEditar: nil)) },
+                                        alIrPronostico: { pila.append(.pronostico) })
                             default:
                                 PanelView(modelo: modelo,
                                           sinLeer: sinLeer,
@@ -85,7 +99,8 @@ struct AppPrincipalView: View {
                                           alIrMovimientos: { selected = 3 },
                                           alIrRecurrentes: { pila.append(.recurrentes) },
                                           alIrAjustes: { pila.append(.ajustes) },
-                                          alIrNotificaciones: { pila.append(.notificaciones) })
+                                          alIrNotificaciones: { pila.append(.notificaciones) },
+                                          alIrPatrimonio: { pila.append(.patrimonio) })
                             }
                         }
                         .navigationDestination(for: RutaApp.self) { ruta in
@@ -105,6 +120,29 @@ struct AppPrincipalView: View {
         .onAppear {
             modelo.cargar()
             Task { await cargarSinLeer() }
+            #if DEBUG
+            // Gancho TEMPORAL de verificacion: KW_PANTALLA navega directo
+            // a la pantalla pedida para capturarla por comandos.
+            if !ganchoAplicado, let destino = ProcessInfo.processInfo.environment["KW_PANTALLA"] {
+                ganchoAplicado = true
+                switch destino {
+                case "presupuesto":
+                    selected = 4
+                    pila.append(.presupuesto(claveEditar: nil))
+                case "pronostico":
+                    selected = 4
+                    pila.append(.pronostico)
+                case "patrimonio":
+                    selected = 4
+                    pila.append(.patrimonio)
+                case "metas":
+                    selected = 4
+                    pila.append(.metas)
+                default:
+                    break
+                }
+            }
+            #endif
         }
         .onChange(of: pila) { nueva in
             if nueva.isEmpty { Task { await cargarSinLeer() } }
@@ -118,7 +156,9 @@ struct AppPrincipalView: View {
             FichaMovimientoView(id: id, alAbrirOtro: { pila.append(.ficha($0)) })
                 .navigationBarBackButtonHidden(true)
         case .categoria(let clave):
-            CategoriaDetalleView(clave: clave, alAbrirFicha: { pila.append(.ficha($0)) })
+            CategoriaDetalleView(clave: clave,
+                                 alAbrirFicha: { pila.append(.ficha($0)) },
+                                 alEditarPresupuesto: { pila.append(.presupuesto(claveEditar: $0)) })
                 .navigationBarBackButtonHidden(true)
         case .recurrentes:
             RecurrentesView(conVolver: true, alIrAAjustes: { pila.append(.ajustes) })
@@ -128,6 +168,19 @@ struct AppPrincipalView: View {
                 .navigationBarBackButtonHidden(true)
         case .notificaciones:
             NotificacionesView()
+                .navigationBarBackButtonHidden(true)
+        case .presupuesto(let claveEditar):
+            PresupuestoView(claveEditar: claveEditar,
+                            alAbrirCategoria: { pila.append(.categoria($0)) })
+                .navigationBarBackButtonHidden(true)
+        case .pronostico:
+            PronosticoView()
+                .navigationBarBackButtonHidden(true)
+        case .patrimonio:
+            PatrimonioView()
+                .navigationBarBackButtonHidden(true)
+        case .metas:
+            MetasView()
                 .navigationBarBackButtonHidden(true)
         }
     }
@@ -148,6 +201,7 @@ struct PanelView: View {
     var alIrRecurrentes: () -> Void = {}
     var alIrAjustes: () -> Void = {}
     var alIrNotificaciones: () -> Void = {}
+    var alIrPatrimonio: () -> Void = {}
 
     var body: some View {
         Group {
@@ -213,7 +267,7 @@ struct PanelView: View {
     private func bloque(_ clave: String, panel: Panel) -> some View {
         switch clave {
         case "carrusel":
-            CarruselHeroe(panel: panel)
+            CarruselHeroe(panel: panel, alIrPatrimonio: alIrPatrimonio)
         case "flujo":
             if let sankey = panel.carrusel.sankey {
                 TarjetaFlujo(sankey: sankey)
@@ -346,6 +400,7 @@ struct InfoHeroe {
 struct CarruselHeroe: View {
     @Environment(\.colorScheme) private var scheme
     let panel: Panel
+    var alIrPatrimonio: () -> Void = {}
     @State private var pagina = 1500
     @State private var info: InfoHeroe? = nil
 
@@ -380,7 +435,7 @@ struct CarruselHeroe: View {
     private func tarjeta(_ indice: Int) -> some View {
         switch indice {
         case 0: TarjetaHeroeGasto(panel: panel) { info = InfoHeroe(titulo: "¿Cómo se calcula tu gasto del mes?", texto: "Sumamos todo lo que salió de tus cuentas este mes, sin contar traspasos entre tus propias cuentas. La línea punteada es tu presupuesto del mes: si la curva la cruza, ya gastaste más de lo que planeaste.") }
-        case 1: TarjetaHeroePatrimonio(panel: panel) { info = InfoHeroe(titulo: "¿Cómo se calcula tu patrimonio neto?", texto: "Sumamos los saldos de todas tus cuentas conectadas y restamos el total de tus deudas. Si el número es positivo, tienes más de lo que debes. La curva se estima con tus movimientos.") }
+        case 1: TarjetaHeroePatrimonio(panel: panel, alVer: alIrPatrimonio) { info = InfoHeroe(titulo: "¿Cómo se calcula tu patrimonio neto?", texto: "Sumamos los saldos de todas tus cuentas conectadas y restamos el total de tus deudas. Si el número es positivo, tienes más de lo que debes. La curva se estima con tus movimientos.") }
         default: TarjetaHeroeDeudas(panel: panel) { info = InfoHeroe(titulo: "¿Cómo se calcula tu fecha de libertad?", texto: "Sumamos los saldos de tus tarjetas y préstamos. La fecha de libertad sale de simular tus pagos mes a mes con tu plan: pagas el mínimo de cada deuda y el dinero extra va a la que marca tu plan, hasta que todas quedan en cero.") }
         }
     }
@@ -468,6 +523,7 @@ struct TarjetaHeroeGasto: View {
 struct TarjetaHeroePatrimonio: View {
     @Environment(\.colorScheme) private var scheme
     let panel: Panel
+    var alVer: () -> Void = {}
     let alInfo: () -> Void
 
     var body: some View {
@@ -490,6 +546,8 @@ struct TarjetaHeroePatrimonio: View {
             Spacer().frame(height: 8)
             MiniGrafica(valores: (patrimonio.serie ?? []).map { $0.neto ?? 0 })
         }
+        .contentShape(Rectangle())
+        .onTapGesture { alVer() }
     }
 }
 
