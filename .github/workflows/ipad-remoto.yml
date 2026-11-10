@@ -26,8 +26,8 @@ jobs:
       - name: Elegir el Xcode mas nuevo disponible
         run: |
           ls /Applications | grep -i xcode || true
-          sudo xcode-select -s /Applications/Xcode_16.2.app || \
-          sudo xcode-select -s "$(ls -d /Applications/Xcode_16*.app | sort -V | tail -1)" || true
+          sudo xcode-select -s /Applications/Xcode_16.4.app || \
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_16.4.app /Applications/Xcode_16.3.app /Applications/Xcode_17*.app 2>/dev/null | sort -V | tail -1)" || true
           xcodebuild -version
 
       - name: Activar Compartir Pantalla (VNC)
