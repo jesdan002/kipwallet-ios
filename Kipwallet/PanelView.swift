@@ -62,9 +62,6 @@ struct AppPrincipalView: View {
     @StateObject private var modelo = PanelModel()
     @State private var selected = 2
     @State private var pila: [RutaApp] = []
-    #if DEBUG
-    @State private var ganchoAplicado = false
-    #endif
     @State private var sinLeer = 0
     @AppStorage("kw_modo_tema") private var modoTema = "sistema"
 
@@ -120,29 +117,6 @@ struct AppPrincipalView: View {
         .onAppear {
             modelo.cargar()
             Task { await cargarSinLeer() }
-            #if DEBUG
-            // Gancho TEMPORAL de verificacion: KW_PANTALLA navega directo
-            // a la pantalla pedida para capturarla por comandos.
-            if !ganchoAplicado, let destino = ProcessInfo.processInfo.environment["KW_PANTALLA"] {
-                ganchoAplicado = true
-                switch destino {
-                case "presupuesto":
-                    selected = 4
-                    pila.append(.presupuesto(claveEditar: nil))
-                case "pronostico":
-                    selected = 4
-                    pila.append(.pronostico)
-                case "patrimonio":
-                    selected = 4
-                    pila.append(.patrimonio)
-                case "metas":
-                    selected = 4
-                    pila.append(.metas)
-                default:
-                    break
-                }
-            }
-            #endif
         }
         .onChange(of: pila) { nueva in
             if nueva.isEmpty { Task { await cargarSinLeer() } }
